@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import User from "../models/user.model";
 import { connectToDB } from "../mongoose";
+import Strings from "../models/strings.model";
 
 interface Params{
     userId:string,
@@ -61,5 +62,33 @@ export async function fetchUser(userId: string) {
         // })
     } catch (error:any) {
         throw new Error(`Failed to fetch user: ${error.message}`);
+    }
+}
+
+export async function fetchUserPosts(userId: string) {
+    try {
+        connectToDB();
+
+        //TODO: populate community
+
+        //Find all strings authored by the user and with the given userId
+        const strings = await User.findOne({ id: userId })
+            .populate({
+                path: 'strings',
+                model: Strings,
+                populate: {
+                    path: 'children',
+                    model: Strings,
+                    populate: {
+                        path: 'author',
+                        model: User,
+                        select:'name image id'
+                    }
+                }
+            })
+        
+        return strings;
+    } catch (error:any) {
+        throw new Error(`Failed to fetch user strings: ${error.message}`);
     }
 }
